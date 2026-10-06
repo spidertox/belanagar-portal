@@ -1,0 +1,11 @@
+@import "tailwindcss";
+@theme{--color-leaf:#1f4d2b;--color-leaf2:#2f6b3c;--color-soil:#6b4a2e;--color-saffron:#e8891c;--color-cream:#faf4e6;--color-ink:#26231f;--font-display:"Tiro Devanagari Hindi",Georgia,serif;--font-sans:"Hind","Noto Sans Devanagari",system-ui,sans-serif}
+body{background:var(--color-cream);color:var(--color-ink);font-family:var(--font-sans);font-size:1.0625rem;line-height:1.65}
+:focus-visible{outline:3px solid var(--color-saffron);outline-offset:2px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:2.75rem;padding:.5rem 1.25rem;border-radius:.5rem;font-weight:600}
+.btn-saffron{background:var(--color-saffron);color:var(--color-ink)}
+.btn-ghost{border:2px solid currentColor}
+.rise{animation:rise 2.4s cubic-bezier(.2,.7,.2,1) both}
+@keyframes rise{from{transform:translateY(80px);opacity:.2}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.bn-pin{width:18px;height:18px;border-radius:50%;background:var(--color-saffron);border:3px solid var(--color-leaf);box-shadow:0 0 0 2px #fff}
