@@ -9,3 +9,17 @@ body{background:var(--color-cream);color:var(--color-ink);font-family:var(--font
 @keyframes rise{from{transform:translateY(80px);opacity:.2}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 .bn-pin{width:18px;height:18px;border-radius:50%;background:var(--color-saffron);border:3px solid var(--color-leaf);box-shadow:0 0 0 2px #fff}
+
+.pattern{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%23fff' stroke-opacity='.09' stroke-width='1.2'%3E%3Cpath d='M28 0L56 28L28 56L0 28Z'/%3E%3Cpath d='M28 14L42 28L28 42L14 28Z'/%3E%3Ccircle cx='28' cy='28' r='4'/%3E%3C/g%3E%3C/svg%3E");background-size:56px 56px}
+.card{background:#fff;border:1px solid rgb(107 74 46/.16);border-radius:1rem;box-shadow:0 1px 2px rgb(38 35 31/.06);transition:transform .25s ease,box-shadow .25s ease}
+.card:hover{transform:translateY(-4px);box-shadow:0 18px 32px -16px rgb(31 77 43/.45)}
+.bn-pin{width:36px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--c,#e8891c);border:3px solid #fff;box-shadow:0 4px 10px rgb(0 0 0/.35);display:grid;place-items:center}
+.bn-pin span{transform:rotate(45deg);font-size:16px;line-height:1}
+.bn-pop b{display:block;font-size:1rem;color:#1f4d2b}.bn-pop small{color:#6b4a2e}.bn-pop p{margin:.25rem 0}.bn-pop a{color:#b8650c;font-weight:600}
+.sun{animation:sunrise 2.8s cubic-bezier(.2,.7,.2,1) both}
+@keyframes sunrise{from{transform:translateY(90px);opacity:.3}to{transform:none;opacity:1}}
+.drift{animation:drift 60s linear infinite alternate}.drift2{animation:drift 38s ease-in-out infinite alternate}
+@keyframes drift{from{transform:translateX(-30px)}to{transform:translateX(40px)}}
+.flow{animation:flow 6s linear infinite}@keyframes flow{to{stroke-dashoffset:-212}}
+.flag{transform-box:fill-box;transform-origin:left center;animation:wave 2.4s ease-in-out infinite alternate}
+@keyframes wave{from{transform:skewY(-6deg)}to{transform:skewY(6deg)}}

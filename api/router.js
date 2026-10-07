@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import {inBoundary} from '../src/lib/geo.js';
+import SEED from '../src/data/seed.js';
 const COLS=['places','schools','businesses','events','news','gallery','announcements','people','services','emergency','projects','festivals','suggestions'];
 const PUBLIC=COLS.filter(c=>c!=='suggestions');
 const tgReady=()=>!!(process.env.TELEGRAM_BOT_TOKEN&&process.env.TELEGRAM_CHAT_ID);
@@ -19,6 +20,7 @@ async function save(data){
  fd.set('document',new Blob([JSON.stringify(data)],{type:'application/json'}),'belanagar-db.json');
  const m=await tg('sendDocument',fd);await tg('pinChatMessage',{chat_id:process.env.TELEGRAM_CHAT_ID,message_id:m.message_id,disable_notification:true});
  cache=data;at=Date.now()}
+const safeLoad=async()=>{try{return await load()}catch(e){console.error('[api] load failed:',e.message);return{}}};
 
 // ---- auth: scrypt password + HMAC-signed HTTP-only cookie ----
 const sign=p=>crypto.createHmac('sha256',process.env.SESSION_SECRET).update(p).digest('base64url');
@@ -41,12 +43,20 @@ const clean=o=>{const r={};let n=0;
   if(typeof v==='number'&&Number.isFinite(v)){r[k]=v;continue}
   if(typeof v!=='string')continue;
   const s=v.replace(/[<>]/g,'').trim().slice(0,4000);
-  if(URLK.test(k)&&s&&!/^https:\/\//i.test(s))continue;
+  if(URLK.test(k)&&s&&!/^(https:\/\/|\/images\/)/i.test(s))continue;
   r[k]=s}
  return r};
 const today=()=>new Date().toISOString().slice(0,10);
 const badPin=x=>(x.lat!=null||x.lng!=null)&&!(x.lat!=null&&x.lng!=null&&inBoundary(x.lat,x.lng));
 const visible=(c,x)=>x.published!==false&&(c!=='announcements'||!x.expires||x.expires>=today())&&(c!=='people'||x.consent==='yes');
+
+// ---- built-in verified starter data: shown until the admin first edits something, then copied into the database ----
+const seedList=k=>(SEED[k]||[]).map((x,i)=>({...x,id:`seed-${k}-${i}`}));
+const adopt=db=>{if(db.seeded)return;
+ for(const k of COLS)if(SEED[k])db[k]=[...seedList(k),...(db[k]||[])];
+ db.village={...SEED.village,...Object.fromEntries(Object.entries(db.village||{}).filter(([,v])=>v!==''))};db.seeded=true};
+const view=(db,k)=>db.seeded?(db[k]||[]):[...seedList(k),...(db[k]||[])];
+const villageView=db=>db.seeded?(db.village||{}):{...SEED.village,...(db.village||{})};
 
 export default async function handler(req,res){
  const t0=Date.now(),url=new URL(req.url,'http://x');let code=200;
@@ -68,22 +78,14 @@ export default async function handler(req,res){
    if(!authed(req))return out(401,{error:'auth'});
    if(m!=='GET'&&req.headers['x-requested-with']!=='bn')return out(403,{error:'csrf'});
    const db=await load();
-   if(b==='overview')return out(200,Object.fromEntries(COLS.map(k=>[k,(db[k]||[]).length])));
-   if(b==='import'&&m==='POST'){
-    const keep=Object.fromEntries(Object.entries(db.village||{}).filter(([,x])=>x!==''));
-    db.village={...clean(body.village),...keep};let added=0;
-    for(const k of COLS){const list=db[k]=db[k]||[];
-     for(const raw of Array.isArray(body[k])?body[k]:[]){const it=clean(raw),key=(it.name||it.title||'').toLowerCase();
-      if(badPin(it)){delete it.lat;delete it.lng}
-      if(!key||list.some(x=>(x.name||x.title||'').toLowerCase()===key))continue;
-      list.push({...it,id:crypto.randomUUID()});added++}}
-    await save(db);return out(200,{added})}
+   if(m!=='GET')adopt(db);
+   if(b==='overview')return out(200,Object.fromEntries(COLS.map(k=>[k,view(db,k).length])));
    if(b==='village'){
-    if(m==='GET')return out(200,db.village||{});
+    if(m==='GET')return out(200,villageView(db));
     if(m==='PUT'){db.village=clean(body);await save(db);return out(200,db.village)}}
    if(COLS.includes(b)){
+    if(m==='GET'&&!id)return out(200,view(db,b));
     const list=db[b]=db[b]||[];
-    if(m==='GET'&&!id)return out(200,list);
     if(m==='POST'&&!id){const it={...clean(body),id:crypto.randomUUID()};if(badPin(it))return out(400,{error:'outside'});list.unshift(it);await save(db);return out(201,it)}
     const i=list.findIndex(x=>x.id===id);if(i<0)return out(404,{error:'notfound'});
     if(m==='PUT'){const it={...clean(body),id};if(badPin(it))return out(400,{error:'outside'});list[i]=it;await save(db);return out(200,it)}
@@ -100,10 +102,10 @@ export default async function handler(req,res){
    await tg('sendMessage',{chat_id:process.env.TELEGRAM_CHAT_ID,text:`${a==='contact'?'New Contact Submission':'New Suggestion ('+(f.type||'other')+')'}\n\nName: ${f.name}\nPhone/Email: ${f.contact}\nSubject: ${f.subject||'-'}\nMessage: ${f.message}\nTime: ${when}`.slice(0,4000)});
    return out(200,{ok:true})}
   if(m==='GET'){
-   const db=tgReady()?await load():{};
-   if(a==='summary')return out(200,{village:db.village||{},counts:Object.fromEntries(PUBLIC.map(k=>[k,(db[k]||[]).filter(x=>visible(k,x)).length]))});
-   if(a==='village')return out(200,db.village||{});
-   if(PUBLIC.includes(a))return out(200,(db[a]||[]).filter(x=>visible(a,x)))}
+   const db=tgReady()?await safeLoad():{};
+   if(a==='summary')return out(200,{village:villageView(db),counts:Object.fromEntries(PUBLIC.map(k=>[k,view(db,k).filter(x=>visible(k,x)).length]))});
+   if(a==='village')return out(200,villageView(db));
+   if(PUBLIC.includes(a))return out(200,view(db,a).filter(x=>visible(a,x)))}
   return out(404,{error:'notfound'})
  }catch(e){console.error('[api]',m,url.pathname,e);if(!res.writableEnded)out(500,{error:'server'})}
  finally{console.log(`[api] ${m} ${a||''}/${b||''} ${code} ${Date.now()-t0}ms`)}

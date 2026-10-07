@@ -6,6 +6,7 @@ import {useLang} from '../i18n/index.jsx';
 import {NAV,PUBLIC,sec} from '../data/sections.js';
 const MAIN=[{to:'/',hi:'मुखपृष्ठ',en:'Home'},{to:'/about',hi:'परिचय',en:'About'},...NAV.map(k=>({to:'/'+k,hi:sec(k).hi,en:sec(k).en})),{to:'/map',hi:'नक्शा',en:'Map'},{to:'/contact',hi:'संपर्क',en:'Contact'}];
 const MORE=PUBLIC.filter(s=>!NAV.includes(s.k)).map(s=>({to:'/'+s.k,hi:s.hi,en:s.en}));
+const QUICK=[['/','🏡','मुखपृष्ठ','Home'],['/places','📍','स्थान','Places'],['/map','🗺️','नक्शा','Map'],['/events','🎉','कार्यक्रम','Events'],['/contact','📞','संपर्क','Contact']];
 export function Logo({size=40}){return(
 <svg width={size} height={size} viewBox="0 0 64 64" role="img" aria-label="Belanagar emblem"><defs><clipPath id="bnc"><circle cx="32" cy="32" r="31"/></clipPath></defs>
 <g clipPath="url(#bnc)"><rect width="64" height="64" fill="#1f4d2b"/><path d="M17 44a15 15 0 0 1 30 0z" fill="#e8891c"/>
@@ -18,7 +19,7 @@ function Navbar(){
  useEffect(()=>{setOpen(false)},[loc.pathname]);
  const cls=({isActive})=>'rounded-md px-2.5 py-1.5 text-sm font-medium '+(isActive?'bg-saffron text-ink':'text-cream/90 hover:bg-white/10');
  return(<>
- <header className={'sticky top-0 z-30 bg-leaf text-cream transition-all '+(small?'py-1.5 shadow-lg':'py-3')}>
+ <header className={'sticky top-0 z-30 border-b border-white/10 bg-leaf/90 text-cream backdrop-blur-md transition-all '+(small?'py-1.5 shadow-lg':'py-3')}>
   <div className="mx-auto flex max-w-7xl items-center gap-3 px-4">
    <Link to="/" className="mr-auto flex items-center gap-2"><Logo size={small?32:40}/><span className="font-display text-xl tracking-wide">BELANAGAR</span></Link>
    <nav aria-label="Main" className="hidden items-center gap-0.5 xl:flex">{MAIN.map(l=><NavLink key={l.to} to={l.to} end className={cls}>{pick(l)}</NavLink>)}</nav>
@@ -34,10 +35,14 @@ function Navbar(){
    <nav aria-label="Menu"><ul>{[...MAIN,...MORE].map(l=><li key={l.to}><NavLink to={l.to} end className={({isActive})=>'block border-b border-white/10 px-2 py-3 '+(isActive?'text-saffron':'')}>{pick(l)}</NavLink></li>)}
    <li><Link to="/admin" className="block px-2 py-3">Admin</Link></li></ul></nav>
   </motion.aside></>}</AnimatePresence></>)}
+function BottomBar(){const {pick}=useLang();
+ return(<nav aria-label="Quick" className="fixed inset-x-0 bottom-0 z-30 border-t border-soil/15 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"><ul className="grid grid-cols-5">
+ {QUICK.map(([to,e,hi,en])=><li key={to}><NavLink to={to} end className={({isActive})=>'flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] '+(isActive?'font-semibold text-leaf':'text-ink/70')}><span aria-hidden="true" className="text-lg leading-none">{e}</span>{pick({hi,en})}</NavLink></li>)}</ul></nav>)}
 function Footer(){const {t,pick}=useLang();
- return(<footer className="mt-16 bg-ink text-cream/90"><div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 md:grid-cols-2">
-  <div><div className="flex items-center gap-2"><Logo/><b className="font-display text-xl">BELANAGAR</b></div><p className="mt-2 font-display">{t('tagline')}</p><p className="mt-4 text-sm">{t('built')}</p></div>
-  <nav aria-label="Footer"><ul className="grid grid-cols-2 gap-1 text-sm">{[...MAIN,...MORE].map(l=><li key={l.to}><Link className="inline-block py-1 hover:underline" to={l.to}>{pick(l)}</Link></li>)}</ul></nav></div></footer>)}
+ return(<footer className="relative overflow-hidden bg-ink pb-24 text-cream/90 md:pb-10"><div className="pattern absolute inset-0"/>
+ <div className="relative mx-auto grid max-w-7xl gap-8 px-4 pt-12 md:grid-cols-[1.2fr_2fr]">
+  <div><div className="flex items-center gap-3"><Logo size={48}/><b className="font-display text-2xl tracking-wide">BELANAGAR</b></div><p className="mt-3 font-display text-lg text-saffron">{t('tagline')}</p><p className="mt-3 text-sm text-cream/70">{t('built')}</p></div>
+  <nav aria-label="Footer"><ul className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:grid-cols-3">{[...MAIN,...MORE].map(l=><li key={l.to}><Link className="inline-flex min-h-9 items-center hover:text-saffron" to={l.to}>{pick(l)}</Link></li>)}</ul></nav></div></footer>)}
 export default function Layout(){const loc=useLocation();
  return(<><Navbar/><motion.main key={loc.pathname} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:.2}} className="min-h-[70vh]">
-  <Suspense fallback={<p role="status" className="py-12 text-center">…</p>}><Outlet/></Suspense></motion.main><Footer/></>)}
+  <Suspense fallback={<p role="status" className="py-12 text-center">…</p>}><Outlet/></Suspense></motion.main><Footer/><BottomBar/></>)}

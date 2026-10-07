@@ -6,7 +6,6 @@ import {inBoundary} from '../lib/geo.js';
 import {api} from '../lib/api.js';
 import {SECTIONS,VILLAGE,SELECT} from '../data/sections.js';
 import {PageHead} from '../components/UI.jsx';
-import SEED from '../data/seed.json';
 const TA=new Set(['description','body','summary','message','bio','intro','achievement','tradition','note']),DT=new Set(['date','expires','last_updated']);
 const IN='w-full rounded-lg border border-soil/30 bg-white px-3 py-2';
 function Field({k,sec,v,set}){const o=SELECT[sec+'.'+k],id='f-'+sec+k;
@@ -18,11 +17,8 @@ function Login({done}){const [pw,setPw]=useState(''),[err,setErr]=useState('');
  const go=async e=>{e.preventDefault();setErr('');try{await api('admin/login',{method:'POST',body:{password:pw}});done()}catch(x){setErr(x.status===503?'Server setup required: add the environment variables in Vercel.':x.status===429?'Too many attempts. Try again later.':'Incorrect password.')}};
  return(<><PageHead title="Admin login"/><form onSubmit={go} className="mx-auto max-w-sm space-y-4 px-4 py-10"><label className="block">Password<input type="password" autoComplete="current-password" required className={IN} value={pw} onChange={e=>setPw(e.target.value)}/></label>
  {err&&<p role="alert" className="text-red-700">{err}</p>}<button className="btn btn-saffron w-full">Log in</button></form></>)}
-function Import(){const [m,setM]=useState('');
- const go=async()=>{if(!window.confirm('Import the Belanagar starter data (village profile, places, school, news)? Entries with the same name are skipped.'))return;setM('Importing…');try{const r=await api('admin/import',{method:'POST',body:SEED});setM('Done: '+r.added+' new entries added.')}catch{setM('Import failed. Check the server setup.')}};
- return(<div className="mt-6 flex flex-wrap items-center gap-3"><button className="btn btn-saffron" onClick={go}>Import starter data</button><span role="status">{m}</span></div>)}
 function Overview(){const [c,setC]=useState(null);useEffect(()=>{api('admin/overview').then(setC).catch(()=>setC({}))},[]);
- return(<><dl className="grid grid-cols-2 gap-4 md:grid-cols-4">{SECTIONS.map(s=><div key={s.k} className="rounded-xl border border-soil/20 bg-white p-4"><dt className="text-sm text-soil">{s.en}</dt><dd className="font-display text-3xl">{c?c[s.k]??0:'…'}</dd></div>)}</dl><Import/></>)}
+ return(<><dl className="grid grid-cols-2 gap-4 md:grid-cols-4">{SECTIONS.map(s=><div key={s.k} className="rounded-xl border border-soil/20 bg-white p-4"><dt className="text-sm text-soil">{s.en}</dt><dd className="font-display text-3xl">{c?c[s.k]??0:'…'}</dd></div>)}</dl></>)}
 function Village(){const [v,setV]=useState(null),[msg,setMsg]=useState('');
  useEffect(()=>{api('admin/village').then(setV).catch(()=>setMsg('Could not load.'))},[]);
  if(!v)return <p>{msg||'Loading…'}</p>;
